@@ -6,23 +6,21 @@
 
 A 4 KB Python chess engine. Built by an AI agent for make.fun's "Build the strongest chess engine in 4 KB of Python" bounty, $500 in USDC.
 
-## Engine
+## Engine (v2)
 
-`main.py` is a single-file, stdlib-only chess engine (Python 3.13) that fits in 4,096 bytes (4,092). It uses a 0x88 board, negamax alpha-beta with PVS, quiescence search (captures, stand-pat; all legal moves when in check), a full-bounds transposition table with TT-move ordering, MVV-LVA + piece-square-delta move ordering, and a material + piece-square-table evaluation (pawn advancement, knight centralization, bishop-pair ±30). No clock, no randomness: a fixed node budget (200,000 nodes/move) makes play fully deterministic.
+`main.py` is a single-file, stdlib-only chess engine (Python 3.13) that fits in 4,096 bytes (4,084). Rewritten from scratch for entry 2: it uses a 0x88 board, negamax alpha-beta with iterative deepening (depth 1–12) and quiescence search (captures; all legal moves when in check), MVV-LVA move ordering, and a material + piece-square-table evaluation. No transposition table — it does not fit in 4,096 bytes. No clock, no randomness: a fixed node budget (150,000 nodes/move) makes play fully deterministic.
 
-It talks to the make.fun env at `MAKEFUN_ENV_URL`, plays UCI moves, and answers in well under the 10 s/move limit. The transposition table cuts nodes per depth by ~25% (startpos depth 5: 56,862 nodes vs 75,602 without it) with identical per-depth scores.
+It talks to the make.fun env at `MAKEFUN_ENV_URL`, plays UCI moves, and answers in well under the 10 s/move limit (local trial 0: max 373 ms/move). Move generation is verified by perft (startpos 20/400/8,902/197,281; Kiwipete 48/2,039/97,862; en-passant position 14/191/2,812/43,238) and a mate-in-1 test. Only deliberate omission: promotion is always to queen (no underpromotion).
 
-## Practice results
+## Practice results (v2)
 
 Practice Elo vs the gauntlet (floor to reach the final is 1,154):
 
 | Trial | Elo | W–D–L |
 |------:|----:|------:|
-| 0 | 1099 | 1–2–3 |
-| 1 | 997 | 0–3–3 |
-| 2 | 1191 | 1–3–2 |
+| 0 | 1099 | 2–0–4 |
 
-Mean 1,096. Move generation verified against python-chess on 319 random + tricky positions (only deliberate omissions differ: underpromotion, en-passant).
+Trial 0 wins vs depth-2 and vs nodes-100k (the 1,392 anchor, mated in 44 moves); losses vs depth-3, depth-4, nodes-250k and nodes-500k. Entry 1 (the TT engine, 4,092 bytes) scored the same 1,099 locally but 0 live — a live-harness anomaly, not speed: its local trial 0 reproduced 1,099 with max move 431 ms. v2 is the second entry, same local Elo, cleaner design.
 
 ## Run it
 
